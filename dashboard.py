@@ -1,432 +1,422 @@
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
 from pathlib import Path
 
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+
+
 # ============================================================
-# AIRLINE INTELLIGENCE | EXECUTIVE ANALYTICS
+# PAGE CONFIGURATION & DESIGN
 # ============================================================
 
 st.set_page_config(
-    page_title="Airline Intelligence | Executive Analytics",
-    page_icon="✈️",
+    page_title="Airline Intelligence | Executive Control Panel",
+    page_icon="✈",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-BASE_DIR = Path(__file__).parent
-DATA_DIR = BASE_DIR / "dashboard_data"
-
-# Premium dark palette — no red
 NAVY = "#101A2B"
-NAVY_2 = "#17263D"
-PANEL = "#172338"
+PANEL = "#17263D"
 GOLD = "#D6B56D"
 IVORY = "#F4F0E6"
 MUTED = "#AAB5C5"
 TEAL = "#65C3B0"
 BLUE = "#7FA6E8"
 PURPLE = "#B6A0E8"
-COLORS = [GOLD, TEAL, BLUE, PURPLE, "#B7C9D6", "#8CC7A1"]
 
-CHART_TEMPLATE = "plotly_dark"
-
-# ============================================================
-# STYLING
-# ============================================================
-
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
-
-    .stApp {
-        background: #101A2B;
-        color: #F4F0E6;
-        font-family: 'DM Sans', sans-serif;
-    }
-
-    h1, h2, h3 {
-        font-family: 'Playfair Display', serif !important;
-        color: #F4F0E6 !important;
-    }
-
-    [data-testid="stSidebar"] {
-        background: #17263D;
-        border-right: 1px solid #34445A;
-    }
-
-    [data-testid="stMetric"] {
-        background: #172338;
-        border: 1px solid #34445A;
-        border-radius: 13px;
-        padding: 17px 18px;
-        min-height: 112px;
-    }
-
-    [data-testid="stMetricLabel"] {
-        color: #AAB5C5 !important;
-        font-size: 0.85rem;
-    }
-
-    [data-testid="stMetricValue"] {
-        color: #D6B56D !important;
-        font-weight: 700;
-    }
-
-    [data-testid="stMetricDelta"] {
-        font-size: 0.8rem;
-    }
-
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        border-color: #34445A;
-        border-radius: 13px;
-    }
-
-    .hero {
-        background: linear-gradient(115deg, #17263D, #202F46);
-        border: 1px solid #34445A;
-        border-radius: 18px;
-        padding: 28px 30px;
-        margin-bottom: 18px;
-    }
-
-    .eyebrow {
-        color: #D6B56D;
-        letter-spacing: 3px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .hero-title {
-        color: #F4F0E6;
-        font-family: 'Playfair Display', serif;
-        font-size: clamp(28px, 4vw, 43px);
-        font-weight: 600;
-        margin: 8px 0;
-    }
-
-    .hero-copy {
-        color: #AAB5C5;
-        font-size: 14px;
-        line-height: 1.7;
-    }
-
-    .section-note {
-        color: #AAB5C5;
-        font-size: 13px;
-        margin-top: -8px;
-        margin-bottom: 14px;
-    }
-
-    .insight-card {
-        background: #172338;
-        border: 1px solid #34445A;
-        border-left: 3px solid #D6B56D;
-        border-radius: 10px;
-        padding: 16px;
-        margin-bottom: 10px;
-        color: #F4F0E6;
-        line-height: 1.65;
-        font-size: 13px;
-    }
-
-    .insight-label {
-        color: #D6B56D;
-        font-weight: 700;
-        letter-spacing: 1px;
-        font-size: 10px;
-        text-transform: uppercase;
-        margin-bottom: 6px;
-    }
-
-    div[data-testid="stTabs"] button {
-        color: #AAB5C5;
-    }
-
-    div[data-testid="stTabs"] button[aria-selected="true"] {
-        color: #D6B56D;
-    }
-
-    hr {
-        border-color: #34445A;
-    }
-
-    .footer {
-        text-align: center;
-        color: #AAB5C5;
-        font-size: 11px;
-        letter-spacing: 1px;
-        padding: 24px 0 10px 0;
-    }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-color: {NAVY};
+        color: {IVORY};
+    }}
+    [data-testid="stSidebar"] {{
+        background-color: {PANEL};
+    }}
+    h1, h2, h3 {{
+        color: {IVORY} !important;
+    }}
+    p, label, .stCaption {{
+        color: {MUTED};
+    }}
+    [data-testid="stMetric"] {{
+        background-color: {PANEL};
+        border: 1px solid #30415A;
+        padding: 18px;
+        border-radius: 12px;
+    }}
+    [data-testid="stMetricLabel"] {{
+        color: {MUTED} !important;
+    }}
+    [data-testid="stMetricValue"] {{
+        color: {GOLD} !important;
+    }}
+    div[data-testid="stDataFrame"] {{
+        border: 1px solid #30415A;
+        border-radius: 8px;
+    }}
+    .section-note {{
+        color: {MUTED};
+        font-size: 0.92rem;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # ============================================================
-# DATA LOADING
+# FILE LOCATIONS
+# Supports summary CSVs in dashboard_data OR repository root
 # ============================================================
 
-
-@st.cache_data(show_spinner="Loading airline analytics...")
-def load_flight_summaries(data_folder):
-    airline = pd.read_csv("airline_summary.csv")
-    monthly = pd.read_csv("monthly_summary.csv")
-    delays = pd.read_csv("delay_summary.csv")
-    routes = pd.read_csv("route_summary.csv")
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "dashboard_data"
 
 
-    # Clean airline summary index column if present
-    if "AIRLINE" not in airline.columns:
-        first_col = airline.columns[0]
-        airline = airline.rename(columns={first_col: "AIRLINE"})
-
-    airline["AIRLINE"] = airline["AIRLINE"].astype(str)
-
-    numeric_airline = [
-        "Flights",
-        "Cancellation_Rate",
-        "Avg_Departure_Delay",
-        "Avg_Arrival_Delay"
+def find_file(filename):
+    candidates = [
+        DATA_DIR / filename,
+        BASE_DIR / filename,
     ]
+    for path in candidates:
+        if path.exists():
+            return path
+    return None
 
-    for col in numeric_airline:
-        if col in airline.columns:
-            airline[col] = pd.to_numeric(airline[col], errors="coerce")
 
-    monthly["Month"] = monthly["Month"].astype(str)
-    monthly["Month_Date"] = pd.to_datetime(
-        monthly["Month"], format="%Y-%m", errors="coerce"
+def read_csv_safely(path):
+    if path is None:
+        return pd.DataFrame()
+    try:
+        return pd.read_csv(path, low_memory=False)
+    except Exception:
+        try:
+            return pd.read_csv(path, encoding="latin1", low_memory=False)
+        except Exception:
+            return pd.DataFrame()
+
+
+@st.cache_data(show_spinner=False)
+def load_flight_summaries():
+    airline = read_csv_safely(find_file("airline_summary.csv"))
+    monthly = read_csv_safely(find_file("monthly_summary.csv"))
+    delay = read_csv_safely(find_file("delay_summary.csv"))
+    routes = read_csv_safely(find_file("route_summary.csv"))
+    return airline, monthly, delay, routes
+
+
+@st.cache_data(show_spinner="Loading passenger datasets...")
+def load_passengers():
+    frames = []
+    for filename in ["train.csv", "test.csv"]:
+        path = BASE_DIR / filename
+        if path.exists():
+            df = read_csv_safely(path)
+            if not df.empty:
+                frames.append(df)
+
+    if not frames:
+        return pd.DataFrame()
+
+    combined = pd.concat(frames, ignore_index=True)
+    combined.columns = combined.columns.astype(str).str.strip()
+    return combined
+
+
+def numeric_series(df, column):
+    if column not in df.columns:
+        return pd.Series(dtype="float64")
+    return pd.to_numeric(df[column], errors="coerce")
+
+
+def find_column(df, candidates):
+    if df.empty:
+        return None
+
+    normalized = {
+        str(col).strip().lower().replace("_", " ").replace("-", " "): col
+        for col in df.columns
+    }
+
+    for candidate in candidates:
+        key = candidate.strip().lower().replace("_", " ").replace("-", " ")
+        if key in normalized:
+            return normalized[key]
+
+    for candidate in candidates:
+        key = candidate.strip().lower().replace("_", " ").replace("-", " ")
+        for normalized_name, original in normalized.items():
+            if key in normalized_name:
+                return original
+
+    return None
+
+
+def numeric_column(df, candidates):
+    col = find_column(df, candidates)
+    if col is None:
+        return None
+    converted = pd.to_numeric(df[col], errors="coerce")
+    if converted.notna().any():
+        return col
+    return None
+
+
+def display_metric(label, value, help_text=None):
+    st.metric(label=label, value=value, help=help_text)
+
+
+def chart_layout(fig, title=None, height=380):
+    fig.update_layout(
+        title=title,
+        height=height,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color=IVORY, family="Arial"),
+        title_font=dict(size=17, color=IVORY),
+        margin=dict(l=20, r=20, t=55, b=35),
+        legend=dict(
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(color=IVORY),
+        ),
+        xaxis=dict(
+            gridcolor="#30415A",
+            linecolor="#30415A",
+            tickfont=dict(color=MUTED),
+            title_font=dict(color=MUTED),
+        ),
+        yaxis=dict(
+            gridcolor="#30415A",
+            linecolor="#30415A",
+            tickfont=dict(color=MUTED),
+            title_font=dict(color=MUTED),
+        ),
     )
-    monthly = monthly.dropna(subset=["Month_Date"]).sort_values("Month_Date")
-
-    for col in [
-        "Flights",
-        "Cancellation_Rate",
-        "Avg_Departure_Delay",
-        "Avg_Arrival_Delay"
-    ]:
-        if col in monthly.columns:
-            monthly[col] = pd.to_numeric(monthly[col], errors="coerce")
-
-    if "Reported Delay Minutes" in delays.columns:
-        delays["Reported Delay Minutes"] = pd.to_numeric(
-            delays["Reported Delay Minutes"], errors="coerce"
-        )
-
-    for col in [
-        "Flights", "Avg_Arrival_Delay", "Cancellation_Rate"
-    ]:
-        if col in routes.columns:
-            routes[col] = pd.to_numeric(routes[col], errors="coerce")
-
-    return airline, monthly, delays, routes
+    return fig
 
 
-@st.cache_data(show_spinner="Loading passenger satisfaction data...")
-def load_passengers(train_path, test_path):
-    train = pd.read_csv(train_path, low_memory=False)
-    test = pd.read_csv(test_path, low_memory=False)
-
-    # Combine both files for descriptive analysis.
-    # Remove duplicate passenger IDs if any overlap.
-    passengers = pd.concat([train, test], ignore_index=True)
-    passengers = passengers.drop(
-        columns=["Unnamed: 0"], errors="ignore"
+def show_chart(fig):
+    st.plotly_chart(
+        chart_layout(fig),
+        use_container_width=True,
+        config={"displaylogo": False, "responsive": True},
     )
 
-    if "id" in passengers.columns:
-        passengers = passengers.drop_duplicates(subset=["id"])
 
-    for col in [
-        "Arrival Delay in Minutes",
-        "Departure Delay in Minutes",
-        "Age",
-        "Flight Distance"
-    ]:
-        if col in passengers.columns:
-            passengers[col] = pd.to_numeric(
-                passengers[col], errors="coerce"
-            )
-
-    if "satisfaction" in passengers.columns:
-        passengers["satisfaction"] = (
-            passengers["satisfaction"].astype("string").str.strip()
-        )
-
-    return passengers
+def clean_category(series):
+    return series.astype("string").fillna("Unknown").str.strip()
 
 
 # ============================================================
-# FILE CHECKS
+# LOAD DATA
 # ============================================================
 
-required_files = [
-    DATA_DIR / "airline_summary.csv",
-    DATA_DIR / "monthly_summary.csv",
-    DATA_DIR / "delay_summary.csv",
-    DATA_DIR / "route_summary.csv",
-    BASE_DIR / "train.csv",
-    BASE_DIR / "test.csv",
-]
-
-missing_files = [file.name for file in required_files if not file.exists()]
-
-if missing_files:
-    st.error(
-        "Some project files are missing. Check the file names and locations:"
-    )
-    for name in missing_files:
-        st.write(f"• {name}")
-    st.stop()
-
-try:
-    airline, monthly, delays, routes = load_flight_summaries(
-        str(DATA_DIR)
-    )
-    passengers = load_passengers(
-        str(BASE_DIR / "train.csv"),
-        str(BASE_DIR / "test.csv")
-    )
-except Exception as error:
-    st.error("The dashboard could not load its data files.")
-    st.code(str(error))
-    st.stop()
-
-
-# ============================================================
-# SIDEBAR
-# ============================================================
-
-st.sidebar.markdown("## AIRLINE INTELLIGENCE")
-st.sidebar.caption("EXECUTIVE CONTROL PANEL")
-st.sidebar.markdown("---")
-
-st.sidebar.markdown("### Flight Operations")
-
-airline_options = sorted(airline["AIRLINE"].dropna().unique().tolist())
-
-selected_airlines = st.sidebar.multiselect(
-    "Compare airlines",
-    options=airline_options,
-    default=airline_options,
-    help="This filter applies to airline comparison charts and the airline table."
+st.sidebar.markdown(
+    f"""
+    <h2 style="color:{GOLD};">AIRLINE INTELLIGENCE</h2>
+    <p style="color:{MUTED};">EXECUTIVE CONTROL PANEL</p>
+    """,
+    unsafe_allow_html=True,
 )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### Passenger Experience")
-
-def get_options(column):
-    if column not in passengers.columns:
-        return ["All"]
-    return ["All"] + sorted(
-        passengers[column].dropna().astype(str).unique().tolist()
-    )
-
-selected_class = st.sidebar.selectbox(
-    "Travel class", get_options("Class")
-)
-
-selected_travel = st.sidebar.selectbox(
-    "Type of travel", get_options("Type of Travel")
-)
-
-selected_customer = st.sidebar.selectbox(
-    "Customer type", get_options("Customer Type")
-)
-
-st.sidebar.markdown("---")
-st.sidebar.caption(
-    "Flight metrics use precomputed summaries from 3 million records. "
-    "Passenger analysis combines the supplied train and test files."
-)
+with st.spinner("Loading airline intelligence data..."):
+    airline_df, monthly_df, delay_df, route_df = load_flight_summaries()
+    passenger_df = load_passengers()
 
 
 # ============================================================
-# HERO HEADER
+# HEADER
 # ============================================================
 
-st.markdown("""
-<div class="hero">
-    <div class="eyebrow">AVIATION • PERFORMANCE • INTELLIGENCE</div>
-    <div class="hero-title">Airline Intelligence</div>
-    <div class="hero-copy">
-        An executive view of flight reliability, delay drivers, airline
-        operations and passenger satisfaction — designed to support
-        evidence-based operational decisions.
+st.markdown(
+    f"""
+    <div style="padding: 8px 0 18px 0;">
+        <p style="color:{GOLD}; letter-spacing:3px; font-size:12px;">
+            OPERATIONS • PERFORMANCE • CUSTOMER EXPERIENCE
+        </p>
+        <h1 style="font-size:36px; margin-bottom:5px;">
+            Airline Intelligence
+        </h1>
+        <p style="color:{MUTED}; font-size:16px;">
+            Executive analytics for flight operations, delays,
+            cancellations and passenger satisfaction.
+        </p>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
+
+if airline_df.empty and monthly_df.empty and delay_df.empty and route_df.empty:
+    st.error(
+        "The four flight summary files could not be loaded. "
+        "Check that the summary CSVs exist in the repository root "
+        "or inside the dashboard_data folder."
+    )
+    st.code(
+        "airline_summary.csv\n"
+        "monthly_summary.csv\n"
+        "delay_summary.csv\n"
+        "route_summary.csv"
+    )
+    st.stop()
+
+
+# ============================================================
+# SIDEBAR FILTERS
+# ============================================================
+
+st.sidebar.divider()
+st.sidebar.subheader("Flight Operations")
+
+airline_name_col = find_column(
+    airline_df, ["AIRLINE", "airline_name", "carrier", "name"]
+)
+airline_filter_col = find_column(
+    airline_df, ["AIRLINE", "airline_name", "carrier", "name"]
+)
+
+filtered_airline_df = airline_df.copy()
+if airline_filter_col and not airline_df.empty:
+    airline_options = sorted(
+        clean_category(airline_df[airline_filter_col]).unique().tolist()
+    )
+    selected_airlines = st.sidebar.multiselect(
+        "Compare airlines",
+        options=airline_options,
+        default=airline_options,
+    )
+    filtered_airline_df = airline_df[
+        clean_category(airline_df[airline_filter_col]).isin(selected_airlines)
+    ].copy()
+else:
+    st.sidebar.caption("Airline names are not available in the summary.")
+
+st.sidebar.divider()
+st.sidebar.subheader("Passenger Experience")
+
+passenger_filter_col = find_column(
+    passenger_df, ["satisfaction", "customer_satisfaction"]
+)
+filtered_passenger_df = passenger_df.copy()
+
+if not passenger_df.empty:
+    for label, candidates in [
+        ("Travel class", ["Class", "travel_class"]),
+        ("Customer type", ["Customer Type", "customer_type"]),
+        ("Travel type", ["Type of Travel", "travel_type"]),
+        ("Satisfaction", ["satisfaction", "customer_satisfaction"]),
+    ]:
+        col = find_column(passenger_df, candidates)
+        if col:
+            options = sorted(clean_category(passenger_df[col]).unique().tolist())
+            chosen = st.sidebar.multiselect(
+                label,
+                options=options,
+                default=options,
+                key=f"filter_{label}",
+            )
+            filtered_passenger_df = filtered_passenger_df[
+                clean_category(filtered_passenger_df[col]).isin(chosen)
+            ]
+
+st.sidebar.divider()
+st.sidebar.caption("AIRLINE ANALYTICS PROJECT")
+st.sidebar.caption("Python • Pandas • Plotly • Streamlit")
+
+
+# ============================================================
+# EXECUTIVE KPI CALCULATIONS
+# ============================================================
+
+flights_col = numeric_column(
+    filtered_airline_df,
+    ["flights", "total_flights", "flight_count", "number_of_flights", "count"],
+)
+cancel_col = numeric_column(
+    filtered_airline_df,
+    ["cancellation_rate", "cancel_rate", "cancelled_rate", "canceled_rate"],
+)
+dep_delay_col = numeric_column(
+    filtered_airline_df,
+    ["avg_dep_delay", "average_departure_delay", "mean_dep_delay",
+     "departure_delay", "dep_delay"],
+)
+arr_delay_col = numeric_column(
+    filtered_airline_df,
+    ["avg_arr_delay", "average_arrival_delay", "mean_arr_delay",
+     "arrival_delay", "arr_delay"],
+)
+
+total_flights = (
+    numeric_series(filtered_airline_df, flights_col).sum()
+    if flights_col else 0
+)
+
+cancel_rate = (
+    numeric_series(filtered_airline_df, cancel_col).mean()
+    if cancel_col else None
+)
+
+avg_dep_delay = (
+    numeric_series(filtered_airline_df, dep_delay_col).mean()
+    if dep_delay_col else None
+)
+
+avg_arr_delay = (
+    numeric_series(filtered_airline_df, arr_delay_col).mean()
+    if arr_delay_col else None
+)
+
+st.subheader("Executive Overview")
+
+k1, k2, k3, k4 = st.columns(4)
+
+with k1:
+    display_metric(
+        "Flights Represented",
+        f"{total_flights:,.0f}" if total_flights else "See airline table",
+    )
+
+with k2:
+    display_metric(
+        "Average Departure Delay",
+        f"{avg_dep_delay:,.2f} min" if avg_dep_delay is not None else "N/A",
+    )
+
+with k3:
+    display_metric(
+        "Average Arrival Delay",
+        f"{avg_arr_delay:,.2f} min" if avg_arr_delay is not None else "N/A",
+    )
+
+with k4:
+    if cancel_rate is None:
+        cancel_display = "N/A"
+    elif cancel_rate <= 1:
+        cancel_display = f"{cancel_rate * 100:.2f}%"
+    else:
+        cancel_display = f"{cancel_rate:.2f}%"
+    display_metric("Cancellation Rate", cancel_display)
 
 st.caption(
-    "FLIGHT OPERATIONS  |  CUSTOMER EXPERIENCE  |  STRATEGIC INSIGHTS"
+    "KPIs are calculated from the available summary columns. "
+    "N/A means the required measure was not found in that summary."
 )
 
-
-# ============================================================
-# EXECUTIVE KPIs
-# ============================================================
-
-total_flights = airline["Flights"].sum()
-
-if total_flights > 0:
-    overall_cancel_rate = (
-        (airline["Flights"] * airline["Cancellation_Rate"]).sum()
-        / total_flights
-    )
-    avg_departure = (
-        (airline["Flights"] * airline["Avg_Departure_Delay"]).sum()
-        / total_flights
-    )
-    avg_arrival = (
-        (airline["Flights"] * airline["Avg_Arrival_Delay"]).sum()
-        / total_flights
-    )
-else:
-    overall_cancel_rate = 0
-    avg_departure = 0
-    avg_arrival = 0
-
-passenger_count = len(passengers)
-
-satisfied_count = (
-    passengers["satisfaction"].str.lower() == "satisfied"
-).sum()
-
-satisfaction_rate = (
-    satisfied_count / passenger_count * 100
-    if passenger_count else 0
+tab_overview, tab_airlines, tab_delays, tab_passengers, tab_data = st.tabs(
+    [
+        "Executive Overview",
+        "Airline Performance",
+        "Delay Intelligence",
+        "Passenger Experience",
+        "Data Explorer",
+    ]
 )
-
-st.markdown("## Executive Overview")
-st.markdown(
-    '<div class="section-note">Key performance indicators across the supplied datasets.</div>',
-    unsafe_allow_html=True
-)
-
-k1, k2, k3, k4, k5 = st.columns(5)
-
-k1.metric("Flights Analyzed", f"{total_flights:,.0f}")
-k2.metric("Cancellation Rate", f"{overall_cancel_rate:.2f}%")
-k3.metric("Avg. Departure Delay", f"{avg_departure:.1f} min")
-k4.metric("Avg. Arrival Delay", f"{avg_arrival:.1f} min")
-k5.metric("Passenger Satisfaction", f"{satisfaction_rate:.1f}%")
-
-st.markdown("---")
-
-
-# ============================================================
-# TABS
-# ============================================================
-
-tab_overview, tab_airlines, tab_delays, tab_customers, tab_data = st.tabs([
-    "Executive Overview",
-    "Airline Performance",
-    "Delay Intelligence",
-    "Passenger Experience",
-    "Data Explorer"
-])
 
 
 # ============================================================
@@ -434,120 +424,102 @@ tab_overview, tab_airlines, tab_delays, tab_customers, tab_data = st.tabs([
 # ============================================================
 
 with tab_overview:
-    left, right = st.columns([1.25, 1])
+    st.subheader("Operational Performance Snapshot")
+
+    left, right = st.columns(2)
 
     with left:
-        st.markdown("### Monthly Flight Activity")
-        st.caption("Flight volume over the available date range.")
-
-        fig_monthly = px.line(
-            monthly,
-            x="Month_Date",
-            y="Flights",
-            markers=True,
-            labels={
-                "Month_Date": "Month",
-                "Flights": "Number of Flights"
-            },
-            template=CHART_TEMPLATE
-        )
-
-        fig_monthly.update_traces(
-            line=dict(color=TEAL, width=3),
-            marker=dict(size=5)
-        )
-        fig_monthly.update_layout(
-            height=350,
-            margin=dict(l=10, r=10, t=20, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=IVORY),
-            hovermode="x unified"
-        )
-        st.plotly_chart(fig_monthly, use_container_width=True)
+        if not filtered_airline_df.empty and airline_name_col:
+            count_col = numeric_column(
+                filtered_airline_df,
+                ["flights", "total_flights", "flight_count",
+                 "number_of_flights", "count"],
+            )
+            if count_col:
+                plot_df = filtered_airline_df.copy()
+                plot_df[count_col] = pd.to_numeric(
+                    plot_df[count_col], errors="coerce"
+                )
+                plot_df = plot_df.dropna(subset=[count_col])
+                plot_df = plot_df.nlargest(12, count_col)
+                fig = px.bar(
+                    plot_df,
+                    x=airline_name_col,
+                    y=count_col,
+                    title="Airline Flight Volume",
+                    color_discrete_sequence=[GOLD],
+                    labels={airline_name_col: "Airline", count_col: "Flights"},
+                )
+                fig.update_xaxes(tickangle=-35)
+                show_chart(fig)
+            else:
+                st.info("No flight-count column was found in airline_summary.csv.")
+        else:
+            st.info("Airline names are not available for this chart.")
 
     with right:
-        st.markdown("### Passenger Satisfaction")
-        st.caption("Distribution across satisfaction categories.")
+        if not delay_df.empty:
+            category_col = find_column(
+                delay_df, ["delay_cause", "cause", "category", "delay_type", "reason"]
+            )
+            value_col = numeric_column(
+                delay_df,
+                ["delay_minutes", "total_delay", "minutes", "total_minutes",
+                 "delay", "value", "count"],
+            )
+            if category_col and value_col:
+                plot_df = delay_df.copy()
+                plot_df[value_col] = pd.to_numeric(
+                    plot_df[value_col], errors="coerce"
+                )
+                plot_df = plot_df.dropna(subset=[value_col]).nlargest(10, value_col)
+                fig = px.bar(
+                    plot_df,
+                    x=category_col,
+                    y=value_col,
+                    title="Delay Causes",
+                    color_discrete_sequence=[TEAL],
+                    labels={category_col: "Cause", value_col: "Minutes / Value"},
+                )
+                fig.update_xaxes(tickangle=-25)
+                show_chart(fig)
+            else:
+                st.info("The delay summary does not contain recognizable category and numeric columns.")
+        else:
+            st.info("Delay summary data is unavailable.")
 
-        satisfaction_data = (
-            passengers["satisfaction"]
-            .value_counts(dropna=False)
-            .rename_axis("Satisfaction")
-            .reset_index(name="Passengers")
+    st.subheader("Monthly Flight Trends")
+
+    if not monthly_df.empty:
+        month_col = find_column(
+            monthly_df, ["month", "year_month", "flight_month", "period", "date"]
+        )
+        monthly_count_col = numeric_column(
+            monthly_df,
+            ["flights", "total_flights", "flight_count", "number_of_flights", "count"],
         )
 
-        fig_satisfaction = px.pie(
-            satisfaction_data,
-            names="Satisfaction",
-            values="Passengers",
-            hole=0.65,
-            color="Satisfaction",
-            color_discrete_map={
-                "satisfied": TEAL,
-                "neutral or dissatisfied": GOLD,
-                "neutral": BLUE,
-                "dissatisfied": PURPLE
-            },
-            template=CHART_TEMPLATE
-        )
-        fig_satisfaction.update_traces(
-            textposition="inside",
-            textinfo="percent",
-            marker=dict(line=dict(color=NAVY, width=2))
-        )
-        fig_satisfaction.update_layout(
-            height=350,
-            margin=dict(l=10, r=10, t=20, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=IVORY),
-            legend=dict(orientation="h", y=-0.12)
-        )
-        st.plotly_chart(fig_satisfaction, use_container_width=True)
-
-    st.markdown("### Executive Signals")
-
-    # These are descriptive findings, not causal conclusions.
-    worst_cancel = airline.loc[airline["Cancellation_Rate"].idxmax()]
-    best_cancel = airline.loc[airline["Cancellation_Rate"].idxmin()]
-    highest_arrival = airline.loc[airline["Avg_Arrival_Delay"].idxmax()]
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.markdown(f"""
-        <div class="insight-card">
-            <div class="insight-label">Cancellation Watch</div>
-            <b>{worst_cancel['AIRLINE']}</b><br>
-            Highest cancellation rate in this sample:
-            <b>{worst_cancel['Cancellation_Rate']:.2f}%</b>.
-            Review flight volumes and operating conditions before
-            deciding on corrective action.
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c2:
-        st.markdown(f"""
-        <div class="insight-card">
-            <div class="insight-label">Lower Cancellation Rate</div>
-            <b>{best_cancel['AIRLINE']}</b><br>
-            Lowest cancellation rate in this sample:
-            <b>{best_cancel['Cancellation_Rate']:.2f}%</b>.
-            Compare routes, seasons and flight volumes for context.
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c3:
-        st.markdown(f"""
-        <div class="insight-card">
-            <div class="insight-label">Arrival Delay Review</div>
-            <b>{highest_arrival['AIRLINE']}</b><br>
-            Highest average arrival delay in this sample:
-            <b>{highest_arrival['Avg_Arrival_Delay']:.2f} minutes</b>.
-            Investigate route mix and operational constraints.
-        </div>
-        """, unsafe_allow_html=True)
+        if month_col and monthly_count_col:
+            plot_df = monthly_df.copy()
+            plot_df[monthly_count_col] = pd.to_numeric(
+                plot_df[monthly_count_col], errors="coerce"
+            )
+            plot_df = plot_df.dropna(subset=[monthly_count_col])
+            fig = px.line(
+                plot_df,
+                x=month_col,
+                y=monthly_count_col,
+                markers=True,
+                title="Flight Volume Over Time",
+                color_discrete_sequence=[GOLD],
+                labels={month_col: "Month", monthly_count_col: "Flights"},
+            )
+            show_chart(fig)
+        else:
+            st.dataframe(monthly_df.head(100), use_container_width=True)
+            st.caption("Showing the monthly summary because standard trend columns were not detected.")
+    else:
+        st.info("Monthly summary data is unavailable.")
 
 
 # ============================================================
@@ -555,129 +527,66 @@ with tab_overview:
 # ============================================================
 
 with tab_airlines:
-    st.markdown("### Airline Performance Benchmark")
-    st.caption(
-        "Select airlines in the sidebar to compare flight volumes, "
-        "cancellations and average delays."
-    )
+    st.subheader("Airline Performance Comparison")
 
-    airline_view = airline[
-        airline["AIRLINE"].isin(selected_airlines)
-    ].copy()
-
-    if airline_view.empty:
-        st.info("Select at least one airline from the sidebar.")
+    if filtered_airline_df.empty:
+        st.info("No airline records match the current filter.")
     else:
-        left, right = st.columns(2)
-
-        with left:
-            fig_volume = px.bar(
-                airline_view.sort_values("Flights", ascending=True),
-                x="Flights",
-                y="AIRLINE",
-                orientation="h",
-                color="Flights",
-                color_continuous_scale=["#34445A", GOLD],
-                labels={"AIRLINE": "Airline", "Flights": "Flights"},
-                template=CHART_TEMPLATE
-            )
-            fig_volume.update_layout(
-                height=500,
-                coloraxis_showscale=False,
-                margin=dict(l=10, r=10, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=IVORY)
-            )
-            st.plotly_chart(fig_volume, use_container_width=True)
-
-        with right:
-            fig_cancel = px.bar(
-                airline_view.sort_values(
-                    "Cancellation_Rate", ascending=True
-                ),
-                x="Cancellation_Rate",
-                y="AIRLINE",
-                orientation="h",
-                color="Cancellation_Rate",
-                color_continuous_scale=["#34445A", GOLD],
-                labels={
-                    "AIRLINE": "Airline",
-                    "Cancellation_Rate": "Cancellation Rate (%)"
-                },
-                template=CHART_TEMPLATE
-            )
-            fig_cancel.update_layout(
-                height=500,
-                coloraxis_showscale=False,
-                margin=dict(l=10, r=10, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=IVORY)
-            )
-            st.plotly_chart(fig_cancel, use_container_width=True)
-
-        st.markdown("### Delay Comparison")
-
-        delay_compare = airline_view.melt(
-            id_vars=["AIRLINE"],
-            value_vars=[
-                "Avg_Departure_Delay",
-                "Avg_Arrival_Delay"
-            ],
-            var_name="Delay Type",
-            value_name="Average Delay (minutes)"
-        )
-
-        delay_compare["Delay Type"] = delay_compare["Delay Type"].map({
-            "Avg_Departure_Delay": "Departure",
-            "Avg_Arrival_Delay": "Arrival"
-        })
-
-        fig_delay_compare = px.bar(
-            delay_compare,
-            x="AIRLINE",
-            y="Average Delay (minutes)",
-            color="Delay Type",
-            barmode="group",
-            color_discrete_map={
-                "Departure": GOLD,
-                "Arrival": TEAL
-            },
-            template=CHART_TEMPLATE
-        )
-        fig_delay_compare.update_layout(
-            height=440,
-            xaxis_tickangle=-35,
-            margin=dict(l=10, r=10, t=20, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=IVORY),
-            legend=dict(orientation="h", y=1.08)
-        )
-        st.plotly_chart(fig_delay_compare, use_container_width=True)
-
-        st.markdown("### Airline Performance Table")
-
-        display_airline = airline_view.rename(columns={
-            "AIRLINE": "Airline",
-            "Flights": "Flights",
-            "Cancellation_Rate": "Cancellation Rate (%)",
-            "Avg_Departure_Delay": "Avg Departure Delay (min)",
-            "Avg_Arrival_Delay": "Avg Arrival Delay (min)"
-        }).sort_values("Flights", ascending=False)
-
         st.dataframe(
-            display_airline.round(2),
+            filtered_airline_df,
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
         )
+
+        airline_col = find_column(
+            filtered_airline_df, ["AIRLINE", "airline_name", "carrier", "name"]
+        )
+        volume_col = numeric_column(
+            filtered_airline_df,
+            ["flights", "total_flights", "flight_count", "number_of_flights", "count"],
+        )
+        cancellation_col = numeric_column(
+            filtered_airline_df,
+            ["cancellation_rate", "cancel_rate", "cancelled_rate", "canceled_rate"],
+        )
+
+        if airline_col and volume_col:
+            plot_df = filtered_airline_df.copy()
+            plot_df[volume_col] = pd.to_numeric(plot_df[volume_col], errors="coerce")
+            plot_df = plot_df.dropna(subset=[volume_col]).nlargest(20, volume_col)
+            fig = px.bar(
+                plot_df,
+                x=airline_col,
+                y=volume_col,
+                title="Flight Volume by Airline",
+                color_discrete_sequence=[BLUE],
+                labels={airline_col: "Airline", volume_col: "Flights"},
+            )
+            fig.update_xaxes(tickangle=-35)
+            show_chart(fig)
+
+        if airline_col and cancellation_col:
+            plot_df = filtered_airline_df.copy()
+            plot_df[cancellation_col] = pd.to_numeric(
+                plot_df[cancellation_col], errors="coerce"
+            )
+            plot_df = plot_df.dropna(subset=[cancellation_col])
+            fig = px.bar(
+                plot_df.sort_values(cancellation_col, ascending=False).head(20),
+                x=airline_col,
+                y=cancellation_col,
+                title="Cancellation Rate by Airline",
+                color_discrete_sequence=[PURPLE],
+                labels={airline_col: "Airline", cancellation_col: "Cancellation rate"},
+            )
+            fig.update_xaxes(tickangle=-35)
+            show_chart(fig)
 
         st.download_button(
-            "Download Airline Comparison CSV",
-            data=display_airline.to_csv(index=False).encode("utf-8"),
-            file_name="airline_performance.csv",
-            mime="text/csv"
+            "Download Airline Summary",
+            data=filtered_airline_df.to_csv(index=False).encode("utf-8"),
+            file_name="airline_performance_filtered.csv",
+            mime="text/csv",
         )
 
 
@@ -686,360 +595,166 @@ with tab_airlines:
 # ============================================================
 
 with tab_delays:
-    st.markdown("### Understanding Delay Drivers")
-    st.caption(
-        "Reported delay minutes by cause and performance trends over time."
-    )
+    st.subheader("Flight Delay Intelligence")
 
-    left, right = st.columns([1.05, 1])
+    if delay_df.empty:
+        st.info("Delay summary data is unavailable.")
+    else:
+        st.dataframe(delay_df, use_container_width=True, hide_index=True)
 
-    with left:
-        delay_view = delays.dropna(
-            subset=["Reported Delay Minutes"]
-        ).sort_values("Reported Delay Minutes", ascending=True)
-
-        fig_causes = px.bar(
-            delay_view,
-            x="Reported Delay Minutes",
-            y="Delay Cause",
-            orientation="h",
-            color="Reported Delay Minutes",
-            color_continuous_scale=["#34445A", GOLD],
-            labels={
-                "Reported Delay Minutes": "Reported Delay Minutes",
-                "Delay Cause": "Delay Cause"
-            },
-            template=CHART_TEMPLATE
+        cause_col = find_column(
+            delay_df, ["delay_cause", "cause", "category", "delay_type", "reason"]
         )
-        fig_causes.update_layout(
-            height=400,
-            coloraxis_showscale=False,
-            margin=dict(l=10, r=10, t=20, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=IVORY)
+        minutes_col = numeric_column(
+            delay_df,
+            ["delay_minutes", "total_delay", "minutes", "total_minutes",
+             "delay", "value", "count"],
         )
-        st.plotly_chart(fig_causes, use_container_width=True)
 
-    with right:
-        fig_delay_trend = px.line(
-            monthly,
-            x="Month_Date",
-            y=["Avg_Departure_Delay", "Avg_Arrival_Delay"],
-            markers=True,
-            labels={
-                "Month_Date": "Month",
-                "value": "Average Delay (minutes)",
-                "variable": "Delay Type"
-            },
-            color_discrete_map={
-                "Avg_Departure_Delay": GOLD,
-                "Avg_Arrival_Delay": TEAL
-            },
-            template=CHART_TEMPLATE
+        if cause_col and minutes_col:
+            plot_df = delay_df.copy()
+            plot_df[minutes_col] = pd.to_numeric(
+                plot_df[minutes_col], errors="coerce"
+            )
+            plot_df = plot_df.dropna(subset=[minutes_col])
+            plot_df = plot_df.sort_values(minutes_col, ascending=True)
+            fig = px.bar(
+                plot_df,
+                x=minutes_col,
+                y=cause_col,
+                orientation="h",
+                title="Delay Contribution by Cause",
+                color_discrete_sequence=[TEAL],
+                labels={minutes_col: "Minutes / Value", cause_col: "Delay cause"},
+            )
+            show_chart(fig)
+        else:
+            st.info("This delay summary's column names are not recognized for a chart.")
+
+        st.download_button(
+            "Download Delay Summary",
+            data=delay_df.to_csv(index=False).encode("utf-8"),
+            file_name="delay_summary.csv",
+            mime="text/csv",
         )
-        fig_delay_trend.update_layout(
-            height=400,
-            margin=dict(l=10, r=10, t=20, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=IVORY),
-            legend=dict(orientation="h", y=1.08)
-        )
-        st.plotly_chart(fig_delay_trend, use_container_width=True)
 
-    st.markdown("### Busiest Routes")
-
-    route_view = routes.copy()
-    route_view["Route"] = (
-        route_view["ORIGIN"].astype(str)
-        + " → "
-        + route_view["DEST"].astype(str)
-    )
-
-    top_n = st.slider(
-        "Number of routes to display",
-        min_value=5,
-        max_value=min(30, max(5, len(route_view))),
-        value=min(10, max(5, len(route_view)))
-    )
-
-    top_routes = route_view.nlargest(top_n, "Flights").sort_values("Flights")
-
-    fig_routes = px.bar(
-        top_routes,
-        x="Flights",
-        y="Route",
-        orientation="h",
-        color="Avg_Arrival_Delay",
-        color_continuous_scale=["#65C3B0", "#D6B56D"],
-        labels={
-            "Flights": "Flights",
-            "Route": "Route",
-            "Avg_Arrival_Delay": "Avg Arrival Delay (min)"
-        },
-        template=CHART_TEMPLATE
-    )
-    fig_routes.update_layout(
-        height=max(400, top_n * 30),
-        coloraxis_colorbar_title="Avg Delay",
-        margin=dict(l=10, r=10, t=20, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=IVORY)
-    )
-    st.plotly_chart(fig_routes, use_container_width=True)
-
-    st.caption(
-        "Route data shows the 100 most frequent routes exported during "
-        "preprocessing, not every route in the original flight dataset."
-    )
+    if not route_df.empty:
+        st.subheader("Route Summary")
+        st.dataframe(route_df.head(100), use_container_width=True, hide_index=True)
 
 
 # ============================================================
 # TAB 4: PASSENGER EXPERIENCE
 # ============================================================
 
-with tab_customers:
-    st.markdown("### Passenger Experience Intelligence")
-    st.caption(
-        "Explore satisfaction and service ratings across passenger groups."
-    )
+with tab_passengers:
+    st.subheader("Passenger Satisfaction Intelligence")
 
-    passenger_view = passengers.copy()
-
-    if selected_class != "All":
-        passenger_view = passenger_view[
-            passenger_view["Class"].astype(str) == selected_class
-        ]
-
-    if selected_travel != "All":
-        passenger_view = passenger_view[
-            passenger_view["Type of Travel"].astype(str) == selected_travel
-        ]
-
-    if selected_customer != "All":
-        passenger_view = passenger_view[
-            passenger_view["Customer Type"].astype(str) == selected_customer
-        ]
-
-    if passenger_view.empty:
-        st.warning("No passenger records match these filters.")
+    if filtered_passenger_df.empty:
+        st.warning(
+            "Passenger data could not be loaded. Ensure train.csv and test.csv "
+            "are stored beside dashboard.py."
+        )
     else:
-        total_filtered = len(passenger_view)
-
-        filtered_satisfied = (
-            passenger_view["satisfaction"].str.lower() == "satisfied"
-        ).sum()
-
-        filtered_rate = (
-            filtered_satisfied / total_filtered * 100
-            if total_filtered else 0
+        satisfaction_col = find_column(
+            filtered_passenger_df, ["satisfaction", "customer_satisfaction"]
+        )
+        class_col = find_column(filtered_passenger_df, ["Class", "travel_class"])
+        travel_col = find_column(
+            filtered_passenger_df, ["Type of Travel", "travel_type"]
         )
 
-        p1, p2, p3 = st.columns(3)
+        total_passengers = len(filtered_passenger_df)
+        st.metric("Passenger Records in Filter", f"{total_passengers:,}")
 
-        p1.metric("Filtered Passengers", f"{total_filtered:,}")
-        p2.metric("Satisfaction Rate", f"{filtered_rate:.1f}%")
-        p3.metric(
-            "Average Flight Distance",
-            f"{passenger_view['Flight Distance'].mean():,.0f}"
-            if "Flight Distance" in passenger_view.columns else "N/A"
-        )
+        if satisfaction_col:
+            satisfaction_values = clean_category(
+                filtered_passenger_df[satisfaction_col]
+            )
+            satisfaction_counts = (
+                satisfaction_values.value_counts().rename_axis("Satisfaction").reset_index(name="Passengers")
+            )
 
-        left, right = st.columns(2)
+            left, right = st.columns(2)
 
-        with left:
-            group_data = (
-                passenger_view.groupby(
-                    ["Class", "satisfaction"], dropna=False
+            with left:
+                fig = px.pie(
+                    satisfaction_counts,
+                    names="Satisfaction",
+                    values="Passengers",
+                    hole=0.58,
+                    title="Passenger Satisfaction Distribution",
+                    color_discrete_sequence=[TEAL, GOLD, BLUE, PURPLE],
                 )
-                .size()
-                .reset_index(name="Passengers")
-            )
+                show_chart(fig)
 
-            fig_class = px.bar(
-                group_data,
-                x="Class",
-                y="Passengers",
-                color="satisfaction",
-                barmode="group",
-                color_discrete_map={
-                    "satisfied": TEAL,
-                    "neutral or dissatisfied": GOLD
-                },
-                labels={
-                    "Class": "Travel Class",
-                    "Passengers": "Passenger Records",
-                    "satisfaction": "Satisfaction"
-                },
-                template=CHART_TEMPLATE
-            )
-            fig_class.update_layout(
-                height=400,
-                margin=dict(l=10, r=10, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=IVORY)
-            )
-            st.plotly_chart(fig_class, use_container_width=True)
-
-        with right:
-            travel_data = (
-                passenger_view.groupby(
-                    ["Type of Travel", "satisfaction"], dropna=False
+            with right:
+                fig = px.bar(
+                    satisfaction_counts,
+                    x="Satisfaction",
+                    y="Passengers",
+                    title="Passenger Satisfaction Counts",
+                    color_discrete_sequence=[GOLD],
                 )
-                .size()
-                .reset_index(name="Passengers")
-            )
+                show_chart(fig)
 
-            fig_travel = px.bar(
-                travel_data,
-                x="Type of Travel",
-                y="Passengers",
-                color="satisfaction",
-                barmode="group",
-                color_discrete_map={
-                    "satisfied": TEAL,
-                    "neutral or dissatisfied": GOLD
-                },
-                labels={
-                    "Type of Travel": "Type of Travel",
-                    "Passengers": "Passenger Records",
-                    "satisfaction": "Satisfaction"
-                },
-                template=CHART_TEMPLATE
-            )
-            fig_travel.update_layout(
-                height=400,
-                margin=dict(l=10, r=10, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=IVORY)
-            )
-            st.plotly_chart(fig_travel, use_container_width=True)
-
-        st.markdown("### Service Rating Benchmark")
-
-        rating_columns = [
-            "Inflight wifi service",
-            "Departure/Arrival time convenient",
-            "Ease of Online booking",
-            "Gate location",
-            "Food and drink",
-            "Online boarding",
-            "Seat comfort",
-            "Inflight entertainment",
-            "On-board service",
-            "Leg room service",
-            "Baggage handling",
-            "Checkin service",
-            "Inflight service",
-            "Cleanliness"
-        ]
-
-        available_ratings = [
-            column for column in rating_columns
-            if column in passenger_view.columns
-        ]
-
-        if available_ratings:
-            rating_data = (
-                passenger_view[available_ratings]
-                .mean()
-                .sort_values()
-                .rename_axis("Service")
-                .reset_index(name="Average Rating")
-            )
-
-            fig_ratings = px.bar(
-                rating_data,
-                x="Average Rating",
-                y="Service",
-                orientation="h",
-                color="Average Rating",
-                color_continuous_scale=["#34445A", GOLD],
-                labels={
-                    "Average Rating": "Mean Rating",
-                    "Service": "Service Dimension"
-                },
-                template=CHART_TEMPLATE
-            )
-            fig_ratings.update_layout(
-                height=540,
-                coloraxis_showscale=False,
-                margin=dict(l=10, r=10, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=IVORY)
-            )
-            st.plotly_chart(fig_ratings, use_container_width=True)
-
-        st.markdown("### Satisfaction by Arrival Delay")
-
-        if "Arrival Delay in Minutes" in passenger_view.columns:
-            delay_passengers = passenger_view.dropna(
-                subset=["Arrival Delay in Minutes"]
-            ).copy()
-
-            delay_passengers["Arrival Delay Band"] = pd.cut(
-                delay_passengers["Arrival Delay in Minutes"].clip(lower=0),
-                bins=[-0.01, 0, 15, 60, float("inf")],
-                labels=[
-                    "On time",
-                    "1–15 min",
-                    "16–60 min",
-                    "Over 60 min"
-                ]
-            )
-
-            delay_satisfaction = (
-                delay_passengers.groupby(
-                    ["Arrival Delay Band", "satisfaction"],
-                    observed=False
-                )
-                .size()
-                .reset_index(name="Passengers")
-            )
-
-            delay_satisfaction = delay_satisfaction[
-                delay_satisfaction["Passengers"] > 0
+            satisfied_labels = [
+                value for value in satisfaction_values.dropna().unique()
+                if "satisfied" in str(value).lower()
+                and "dissatisfied" not in str(value).lower()
             ]
+            satisfied_count = satisfaction_values.isin(satisfied_labels).sum()
 
-            fig_delay_satisfaction = px.bar(
-                delay_satisfaction,
-                x="Arrival Delay Band",
+            if total_passengers:
+                satisfaction_rate = satisfied_count / total_passengers * 100
+                st.metric("Satisfied Passengers", f"{satisfaction_rate:.1f}%")
+        else:
+            st.info("No satisfaction column was found in the passenger dataset.")
+
+        if class_col and satisfaction_col:
+            cross = filtered_passenger_df.copy()
+            cross["_satisfaction"] = clean_category(cross[satisfaction_col])
+            cross["_class"] = clean_category(cross[class_col])
+            cross_tab = pd.crosstab(cross["_class"], cross["_satisfaction"])
+            fig = px.bar(
+                cross_tab.reset_index().melt(
+                    id_vars="_class",
+                    var_name="Satisfaction",
+                    value_name="Passengers",
+                ),
+                x="_class",
                 y="Passengers",
-                color="satisfaction",
+                color="Satisfaction",
                 barmode="group",
-                color_discrete_map={
-                    "satisfied": TEAL,
-                    "neutral or dissatisfied": GOLD
-                },
-                template=CHART_TEMPLATE,
-                labels={
-                    "Arrival Delay Band": "Arrival Delay",
-                    "Passengers": "Passenger Records",
-                    "satisfaction": "Satisfaction"
-                }
+                title="Satisfaction by Travel Class",
+                color_discrete_sequence=[TEAL, GOLD, BLUE, PURPLE],
+                labels={"_class": "Travel class"},
             )
-            fig_delay_satisfaction.update_layout(
-                height=390,
-                margin=dict(l=10, r=10, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=IVORY)
-            )
-            st.plotly_chart(
-                fig_delay_satisfaction,
-                use_container_width=True
-            )
+            show_chart(fig)
 
-        st.download_button(
-            "Download Filtered Passenger Data",
-            data=passenger_view.to_csv(index=False).encode("utf-8"),
-            file_name="filtered_passenger_experience.csv",
-            mime="text/csv"
+        if travel_col and satisfaction_col:
+            travel_cross = pd.crosstab(
+                clean_category(filtered_passenger_df[travel_col]),
+                clean_category(filtered_passenger_df[satisfaction_col]),
+            )
+            fig = px.bar(
+                travel_cross.reset_index().melt(
+                    id_vars=travel_cross.index.name or "index",
+                    var_name="Satisfaction",
+                    value_name="Passengers",
+                ),
+                x=travel_cross.index.name or "index",
+                y="Passengers",
+                color="Satisfaction",
+                barmode="group",
+                title="Satisfaction by Type of Travel",
+                color_discrete_sequence=[TEAL, GOLD, BLUE, PURPLE],
+            )
+            show_chart(fig)
+
+        st.caption(
+            "Passenger satisfaction data is analyzed separately from flight "
+            "operations data; individual passenger records are not linked to specific flights."
         )
 
 
@@ -1048,60 +763,73 @@ with tab_customers:
 # ============================================================
 
 with tab_data:
-    st.markdown("### Data Explorer")
-    st.caption(
-        "Inspect the processed flight summaries and passenger records."
-    )
+    st.subheader("Data Explorer")
 
-    data_choice = st.selectbox(
-        "Choose a dataset",
-        [
-            "Airline Summary",
-            "Monthly Summary",
-            "Delay Causes",
-            "Top 100 Routes",
-            "Passenger Records"
-        ]
-    )
-
-    data_map = {
-        "Airline Summary": airline,
-        "Monthly Summary": monthly.drop(
-            columns=["Month_Date"], errors="ignore"
-        ),
-        "Delay Causes": delays,
-        "Top 100 Routes": routes,
-        "Passenger Records": passengers
+    dataset_options = {
+        "Airline Summary": airline_df,
+        "Monthly Summary": monthly_df,
+        "Delay Summary": delay_df,
+        "Route Summary": route_df,
+        "Passenger Dataset": filtered_passenger_df,
     }
 
-    chosen_data = data_map[data_choice]
-
-    st.write(f"**Rows:** {len(chosen_data):,}")
-    st.dataframe(
-        chosen_data.head(1000),
-        use_container_width=True,
-        hide_index=True
+    selected_dataset_name = st.selectbox(
+        "Choose a dataset",
+        list(dataset_options.keys()),
     )
+    chosen_data = dataset_options[selected_dataset_name]
 
-    st.download_button(
-        "Download Selected Dataset as CSV",
-        data=chosen_data.to_csv(index=False).encode("utf-8"),
-        file_name=data_choice.lower().replace(" ", "_") + ".csv",
-        mime="text/csv"
-    )
+    if chosen_data.empty:
+        st.info("This dataset is empty or unavailable.")
+    else:
+        search_text = st.text_input(
+            "Search displayed data",
+            placeholder="Type a value to filter rows...",
+        )
+
+        display_df = chosen_data.copy()
+
+        if search_text:
+            mask = display_df.astype(str).apply(
+                lambda column: column.str.contains(
+                    search_text, case=False, na=False
+                )
+            ).any(axis=1)
+            display_df = display_df[mask]
+
+        st.caption(
+            f"Showing {len(display_df):,} of {len(chosen_data):,} rows"
+        )
+        st.dataframe(display_df.head(500), use_container_width=True, hide_index=True)
+
+        st.download_button(
+            "Download Selected Dataset as CSV",
+            data=display_df.to_csv(index=False).encode("utf-8"),
+            file_name=(
+                selected_dataset_name.lower().replace(" ", "_") + ".csv"
+            ),
+            mime="text/csv",
+        )
 
 
 # ============================================================
 # FOOTER
 # ============================================================
 
-st.markdown("---")
-st.markdown("""
-<div class="footer">
-AIRLINE INTELLIGENCE &nbsp; • &nbsp;
-OPERATIONS ANALYTICS &nbsp; • &nbsp;
-CUSTOMER EXPERIENCE
-<br><br>
-Prepared for strategic performance review using the supplied datasets.
-</div>
-""", unsafe_allow_html=True)
+st.divider()
+st.markdown(
+    f"""
+    <div style="text-align:center; padding:15px 0 25px 0;">
+        <p style="color:{GOLD}; letter-spacing:2px; font-size:12px;">
+            AIRLINE INTELLIGENCE
+        </p>
+        <p style="color:{MUTED};">
+            OPERATIONS ANALYTICS • CUSTOMER EXPERIENCE
+        </p>
+        <p style="color:{MUTED}; font-size:12px;">
+            Prepared for strategic performance review using the supplied datasets.
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
