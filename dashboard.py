@@ -168,14 +168,14 @@ st.markdown("""
 # DATA LOADING
 # ============================================================
 
-@st.cache_data(show_spinner="Loading airline analytics...")
-def load_flight_summaries(data_folder):
-    folder = Path(data_folder)
 
-    airline = pd.read_csv(folder / "airline_summary.csv")
-    monthly = pd.read_csv(folder / "monthly_summary.csv")
-    delays = pd.read_csv(folder / "delay_summary.csv")
-    routes = pd.read_csv(folder / "route_summary.csv")
+@st.cache_data(show_spinner="Loading airline analytics...")
+def load_flight_summaries():
+    airline = pd.read_csv("airline_summary.csv")
+    monthly = pd.read_csv("monthly_summary.csv")
+    delays = pd.read_csv("delay_summary.csv")
+    routes = pd.read_csv("route_summary.csv")
+
 
     # Clean airline summary index column if present
     if "AIRLINE" not in airline.columns:
