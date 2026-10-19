@@ -170,7 +170,7 @@ st.markdown("""
 
 
 @st.cache_data(show_spinner="Loading airline analytics...")
-def load_flight_summaries():
+def load_flight_summaries(data_folder):
     airline = pd.read_csv("airline_summary.csv")
     monthly = pd.read_csv("monthly_summary.csv")
     delays = pd.read_csv("delay_summary.csv")
